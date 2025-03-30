@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Function to handle errors: echo to stderr and exit
+error_exit() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+# Main logic
+if whiptail --title "Keys install program" --yes-button "INSTALL" --no-button "EXIT" \
+    --yesno "Do you want to load your .ssh and .gnupg keys on the user $USER? If YES, plug the USB device now.\n\nThen click <INSTALL> to continue or <EXIT> to skip." 13 60; then
+
+    # Define mount point and destinations
+    MOUNT_POINT="/mnt"
+    RESTORE_DESTINATIONS=("$HOME/.gnupg" "$HOME/.ssh" "$HOME/.local/share/password-store" "/etc/hosts" "/etc/ssh/sshd_config")
+
+    # Check required commands
+    for cmd in mount umount lsblk rsync; do
+        command -v "$cmd" >/dev/null 2>&1 || error_exit "$cmd is not installed. Install it with 'pacman -S $cmd'."
+    done
+
+    # Prompt for device selection
+    echo "Available devices:"
+    lsblk
+    echo "Enter the device partition (e.g., sdb1):"
+    read -r device
+    [ -b "/dev/$device" ] || error_exit "/dev/$device is not a valid block device."
+
+    # Handle mount point
+    mountpoint -q "$MOUNT_POINT" && sudo umount "$MOUNT_POINT" || true
+    sudo mount "/dev/$device" "$MOUNT_POINT" || error_exit "Failed to mount /dev/$device."
+
+    # Confirm overwrite
+    echo "WARNING: This will overwrite existing files. Type 'yes' to proceed, anything else to abort:"
+    read -r confirm
+    [ "$confirm" = "yes" ] || { sudo umount "$MOUNT_POINT"; exit 1; }
+
+    # Restore files
+    for dest in "${RESTORE_DESTINATIONS[@]}"; do
+        src="$MOUNT_POINT/$(basename "$dest")"
+        if [ -d "$src" ]; then
+            [[ "$dest" == /etc/* ]] && sudo rsync -a --quiet "$src/" "$dest/" || rsync -a --quiet "$src/" "$dest/"
+        elif [ -f "$src" ]; then
+            [[ "$dest" == /etc/* ]] && sudo rsync -a --quiet "$src" "$dest" || rsync -a --quiet "$src" "$dest"
+        fi
+    done
+
+    # Set permissions
+    [ -d "$HOME/.ssh" ] && chmod 700 "$HOME/.ssh" && find "$HOME/.ssh" -type f -not -name "*.pub" -exec chmod 600 {} \; && find "$HOME/.ssh" -type f -name "*.pub" -exec chmod 644 {} \;
+    [ -d "$HOME/.gnupg" ] && chmod 700 "$HOME/.gnupg" && find "$HOME/.gnupg" -type f -exec chmod 600 {} \;
+    [ -d "$HOME/.local/share/password-store" ] && chmod 700 "$HOME/.local/share/password-store" && find "$HOME/.local/share/password-store" -type f -exec chmod 600 {} \;
+    [ -f "/etc/hosts" ] && sudo chmod 644 "/etc/hosts"
+    [ -f "/etc/ssh/sshd_config" ] && sudo chmod 644 "/etc/ssh/sshd_config"
+
+    # Unmount
+    sudo umount "$MOUNT_POINT" || error_exit "Failed to unmount $MOUNT_POINT."
+    echo "Restore complete."
+else
+    exit 1
+fi
