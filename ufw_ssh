@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Check if the script is run as root; if not, rerun with sudo
+if [ "$EUID" -ne 0 ]; then
+    echo "Rerunning script with sudo..."
+    exec sudo "$0" "$@"
+fi
+
+# Warn the user about deleting all existing rules and overriding settings
+echo "This script will DELETE ALL EXISTING UFW RULES and set new default settings, allowing SSH only from 192.168.1.0-255. Proceed? (y/n)"
+read -r response
+if [ "$response" != "y" ]; then
+    echo "Aborting."
+    exit 0
+fi
+
+# Check if UFW is installed, install if not (assumes Arch-based system with pacman)
+echo "Checking if UFW is installed..."
+if ! command -v ufw &> /dev/null; then
+    echo "UFW not found. Installing UFW..."
+    pacman -S --noconfirm ufw
+fi
+
+# Reset UFW to delete all existing rules and set to default state
+echo "Resetting UFW to delete all existing rules..."
+ufw reset
+
+# Set default UFW policies: deny incoming, allow outgoing
+echo "Setting default UFW policies..."
+ufw default deny incoming
+ufw default allow outgoing
+
+# Allow incoming SSH connections only from local network (192.168.1.0/24)
+echo "Allowing incoming SSH connections from local network (192.168.1.0/24)..."
+ufw allow from 192.168.1.0/24 to any port 22 proto tcp
+
+# Enable UFW to activate the firewall with the new rules
+echo "Enabling UFW to an active state..."
+ufw enable
+
+# Enable and start UFW service
+echo "Enabling and starting UFW service..."
+systemctl enable ufw.service
+systemctl start ufw.service
+
+# Ensure UFW logging is enabled (if this was in the original script)
+echo "Ensuring UFW logging is enabled..."
+ufw logging on
+
+# Display UFW status to confirm settings
+echo "UFW status:"
+ufw status numbered
