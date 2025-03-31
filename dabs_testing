@@ -281,6 +281,13 @@ loadkeys() {
     fi
 }
 
+startservices() {
+	systemctl enable sshd.service
+	systemctl enable bluetooth.service
+	systemctl start sshd.service
+	systemctl start bluetooth.service
+}
+
 tidyup() {
 	rm -f /etc/sudoers.d/larbs-temp
 	rm -f /home/$name/install_yay
@@ -423,6 +430,9 @@ echo "kernel.dmesg_restrict = 0" > /etc/sysctl.d/dmesg.conf
 
 # Load ssh, gnupg, and password-store
 loadkeys
+
+# Enable and start up systemd services
+startservices
 
 # Clean up and start services
 tidyup
