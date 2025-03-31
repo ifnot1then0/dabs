@@ -203,11 +203,16 @@ makeuserjs(){
 	chown "$name:wheel" "$arkenfox" "$userjs"
 }
 
+startservices() {
+	systemctl enable sshd.service
+	systemctl enable bluetooth.service
+	systemctl start sshd.service
+	systemctl start bluetooth.service
+}
+
 tidyup() {
 	rm -f /etc/sudoers.d/larbs-temp
 	rm -f /home/$name/install_yay
-	systemctl enable sshd.service
-	systemctl start sshd.service
 }
 
 finalize() {
@@ -342,6 +347,9 @@ echo "%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/light,/usr/bin/shutdown,/usr/bin/r
 echo "Defaults editor=/usr/bin/nvim" >/etc/sudoers.d/02-larbs-visudo-editor
 mkdir -p /etc/sysctl.d
 echo "kernel.dmesg_restrict = 0" > /etc/sysctl.d/dmesg.conf
+
+# Enable and start up systemd services
+startservices
 
 # Clean up and start services
 tidyup
