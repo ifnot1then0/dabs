@@ -9,7 +9,7 @@
 ### OPTIONS AND VARIABLES ###
 
 dotfilesrepo="https://github.com/ifnot1then0/dot.git"
-progsfile="https://raw.githubusercontent.com/ifnot1then0/dabs/refs/heads/dabs/static/sabs.csv"
+progsfile="https://raw.githubusercontent.com/ifnot1then0/dabs/refs/heads/dabs/sabs.csv"
 aurhelper="yay"
 repobranch="dot"
 export TERM=ansi
