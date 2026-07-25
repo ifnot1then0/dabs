@@ -68,7 +68,7 @@ git_local_template=$(cat <<'EOF'
 	bare = false
 	logallrefupdates = true
 [remote "local"]
-	url = git@server:/home/git/dev/$name_of_branch.git
+	url = git@admin:/home/git/dev/$name_of_branch.git
 	fetch = refs/heads/*:refs/remotes/local/*
 [branch "$name_of_branch"]
 	remote = local
@@ -94,7 +94,7 @@ EOF
 # Define the list of directories with local repositories
 directories_local_repo=(
     "$HOME/.config/bookmenu:bookmenu"
-    "$HOME/.config/qutebrowser:surf"
+    "$HOME/.config/librewolf:wolf"
     "$HOME/.local/share/password-store:pass"
     "$HOME/.local/share/newsboat:newsboat"
     "$HOME/.local/usr:usr"
@@ -106,9 +106,7 @@ directories_local_repo=(
     "$HOME/gms/KSP:KSP"
     "$HOME/gms/minecraft:minecraft"
     "$HOME/gms/RDR2:RDR2"
-    "$HOME/med/aud:aud"
     "$HOME/med/mus:mus"
-    "$HOME/med/vid:vid"
     "$HOME/pic:pic"
     "$HOME/tmp:tmp"
     "$HOME/prg/dotgit/bash:bash"
